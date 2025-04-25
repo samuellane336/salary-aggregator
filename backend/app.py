@@ -7,6 +7,11 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/")
+def home():
+    return "🚀 Your backend is live!"
+
+
 def get_db_connection():
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME"),
