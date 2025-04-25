@@ -1,0 +1,19 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salary Aggregator</title>
+</head>
+<body>
+    <div id="root">
+        <h1>Job Salary Search</h1>
+        <p>Search and view salary ranges for jobs</p>
+    </div>
+    <script>
+        fetch('http://localhost:5000/jobs')
+            .then(res => res.json())
+            .then(data => console.log('Jobs:', data));
+    </script>
+</body>
+</html>
