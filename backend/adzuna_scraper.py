@@ -36,9 +36,7 @@ def fetch_jobs(job_title, location, page=1):
         'app_key': APP_KEY,
         'results_per_page': 50,
         'what': job_title,
-        'where': location,
-        'page': page,
-        
+        'where': location        
     }
     try:
         response = requests.get(BASE_URL, params=params)
