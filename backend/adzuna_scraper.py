@@ -38,7 +38,7 @@ def fetch_jobs(job_title, location, page=1):
         'what': job_title,
         'where': location,
         'page': page,
-        'content-type': 'application/json'
+        
     }
     try:
         response = requests.get(BASE_URL, params=params)
