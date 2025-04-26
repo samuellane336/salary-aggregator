@@ -5,16 +5,17 @@ from datetime import datetime
 import os
 
 # === CONFIG ===
-APP_ID = "9a0a0f1a"
-APP_KEY = "77da7d24800f5ceaafbda4e00f7da500"
+APP_ID = os.environ.get('ADZUNA_APP_ID')
+APP_KEY = os.environ.get('ADZUNA_APP_KEY')
 
 DB_CONFIG = {
-    'dbname': 'salary_db_njfw',
-    'user': 'salary_db_njfw_user',
-    'password': '5qONed3hlxpTP0n6afBI7ZoVUsnurlvb',
-    'host': 'dpg-d05pdnbuibrs73fufs60-a.virginia-postgres.render.com',
+    'dbname': os.environ.get('DB_NAME'),
+    'user': os.environ.get('DB_USER'),
+    'password': os.environ.get('DB_PASSWORD'),
+    'host': os.environ.get('DB_HOST'),
     'port': 5432,
 }
+
 
 CALL_TRACKER_FILE = "call_tracker.txt"
 DAILY_CALL_LIMIT = 250
