@@ -1,19 +1,77 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Salary Aggregator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+        }
+        input, button {
+            padding: 0.5rem;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        .job-card {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
     <div id="root">
         <h1>Job Salary Search</h1>
         <p>Search and view salary ranges for jobs</p>
+
+        <input type="text" id="titleInput" placeholder="Enter job title...">
+        <input type="text" id="locationInput" placeholder="Enter location...">
+        <button onclick="searchJobs()">Search</button>
+
+        <div id="results"></div>
     </div>
+
     <script>
-        fetch('http://localhost:5000/jobs')
-            .then(res => res.json())
-            .then(data => console.log('Jobs:', data));
+        function searchJobs() {
+            const title = document.getElementById('titleInput').value;
+            const location = document.getElementById('locationInput').value;
+
+            let url = 'https://salary-aggregator.onrender.com/jobs?';
+
+            if (title) {
+                url += `title=${encodeURIComponent(title)}&`;
+            }
+            if (location) {
+                url += `location=${encodeURIComponent(location)}&`;
+            }
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '';
+
+                    if (data.length === 0) {
+                        resultsDiv.innerHTML = '<p>No jobs found.</p>';
+                        return;
+                    }
+
+                    data.forEach(job => {
+                        const jobCard = document.createElement('div');
+                        jobCard.className = 'job-card';
+                        jobCard.innerHTML = `
+                            <h3>${job.title}</h3>
+                            <p><strong>Location:</strong> ${job.location}</p>
+                            <p><strong>Salary Range:</strong> $${job.salary_min || 'N/A'} - $${job.salary_max || 'N/A'}</p>
+                        `;
+                        resultsDiv.appendChild(jobCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching jobs:', error);
+                });
+        }
     </script>
 </body>
 </html>
