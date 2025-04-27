@@ -33,45 +33,46 @@
     </div>
 
     <script>
-        function searchJobs() {
-            const title = document.getElementById('titleInput').value;
-            const location = document.getElementById('locationInput').value;
+  async function searchJobs() {
+    const title = document.getElementById('title').value;
+    const location = document.getElementById('location').value;
 
-            let url = 'https://salary-aggregator.onrender.com/jobs?';
+    try {
+      const response = await fetch('https://salary-aggregator.onrender.com/jobs');
+      const jobs = await response.json();
 
-            if (title) {
-                url += `title=${encodeURIComponent(title)}&`;
-            }
-            if (location) {
-                url += `location=${encodeURIComponent(location)}&`;
-            }
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
 
-            fetch(url)
-                .then(res => res.json())
-                .then(data => {
-                    const resultsDiv = document.getElementById('results');
-                    resultsDiv.innerHTML = '';
+      const filteredJobs = jobs.filter(job => {
+        const jobTitle = (job[0] || '').toLowerCase();
+        const jobLocation = (job[1] || '').toLowerCase();
+        return jobTitle.includes(title.toLowerCase()) && jobLocation.includes(location.toLowerCase());
+      });
 
-                    if (data.length === 0) {
-                        resultsDiv.innerHTML = '<p>No jobs found.</p>';
-                        return;
-                    }
+      if (filteredJobs.length === 0) {
+        resultsDiv.innerHTML = '<p>No jobs found matching your search.</p>';
+        return;
+      }
 
-                    data.forEach(job => {
-                        const jobCard = document.createElement('div');
-                        jobCard.className = 'job-card';
-                        jobCard.innerHTML = `
-                            <h3>${job.title}</h3>
-                            <p><strong>Location:</strong> ${job.location}</p>
-                            <p><strong>Salary Range:</strong> $${job.salary_min || 'N/A'} - $${job.salary_max || 'N/A'}</p>
-                        `;
-                        resultsDiv.appendChild(jobCard);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching jobs:', error);
-                });
-        }
-    </script>
-</body>
-</html>
+      filteredJobs.forEach(job => {
+        const jobTitle = job[0] || 'Not Available';
+        const jobLocation = job[1] || 'Not Available';
+        const salaryMin = job[2] ? `$${job[2]}` : 'N/A';
+        const salaryMax = job[3] ? `$${job[3]}` : 'N/A';
+
+        const jobCard = document.createElement('div');
+        jobCard.className = 'job-card';
+        jobCard.innerHTML = `
+          <h3>${jobTitle}</h3>
+          <p><strong>Location:</strong> ${jobLocation}</p>
+          <p><strong>Salary Range:</strong> ${salaryMin} - ${salaryMax}</p>
+        `;
+        resultsDiv.appendChild(jobCard);
+      });
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
+  }
+</script>
+
