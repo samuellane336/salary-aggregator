@@ -25,10 +25,25 @@ def get_db_connection():
 def get_jobs():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT title, location, salary_min, salary_max FROM JobPosting")
+
+    location = request.args.get("location")
+    title = request.args.get("title")
+
+    query = "SELECT title, location, salary_min, salary_max FROM JobPosting WHERE TRUE"
+    params = []
+
+    if location:
+        query += " AND location ILIKE %s"
+        params.append(f"%{location}%")
+    if title:
+        query += " AND title ILIKE %s"
+        params.append(f"%{title}%")
+
+    cur.execute(query, params)
     jobs = cur.fetchall()
     cur.close()
     conn.close()
+
     return jsonify(jobs)
 
 @app.route("/jobs/median", methods=["GET"])
