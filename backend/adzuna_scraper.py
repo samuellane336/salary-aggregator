@@ -7,10 +7,13 @@ import time
 import random
 from datetime import datetime
 
-# Validate master_query_list.csv before running
+# Always write progress.txt next to the script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROGRESS_PATH = os.path.join(SCRIPT_DIR, 'progress.txt')
+
 def validate_master_query_list():
     try:
-        with open('master_query_list.csv', newline='', encoding='utf-8') as csvfile:
+        with open(os.path.join(SCRIPT_DIR, 'master_query_list.csv'), newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             first_row = next(reader)
             if 'job_title' not in first_row or 'city' not in first_row:
@@ -30,7 +33,6 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD')
 ADZUNA_APP_ID = os.environ.get('ADZUNA_APP_ID')
 ADZUNA_APP_KEY = os.environ.get('ADZUNA_APP_KEY')
 
-# Database connection
 def connect_db():
     return psycopg2.connect(
         host=DB_HOST,
@@ -39,10 +41,11 @@ def connect_db():
         password=DB_PASSWORD
     )
 
-# Save a batch of jobs into database
 def save_jobs(jobs):
     conn = connect_db()
     cur = conn.cursor()
+    inserted_count = 0
+
     for job in jobs:
         try:
             if job.get('salary_is_predicted') == "1":
@@ -57,7 +60,7 @@ def save_jobs(jobs):
             cur.execute("""
                 INSERT INTO JobPosting 
                 (adzuna_id, title, company_name, location, category, salary_min, salary_max, 
-                 contract_time, salary_type, description, date_posted, job_url, source)
+                 contract_type, salary_interval, description, date_posted, job_url, source)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (adzuna_id) DO NOTHING
             """, (
@@ -68,13 +71,17 @@ def save_jobs(jobs):
                 job.get('category', {}).get('label'),
                 salary_min,
                 salary_max,
-                job.get('contract_time'),
                 job.get('contract_type'),
+                job.get('contract_time'),  # salary_interval
                 job.get('description'),
                 format_date(job.get('created')),
                 job.get('redirect_url'),
                 "adzuna"
             ))
+
+            if cur.rowcount == 1:
+                inserted_count += 1
+
         except Exception as e:
             print(f"⚠️ Error inserting job: {e}")
             continue
@@ -82,8 +89,8 @@ def save_jobs(jobs):
     conn.commit()
     cur.close()
     conn.close()
+    return inserted_count
 
-# Normalize salaries to annual
 def normalize_salary(min_salary, max_salary, contract_time):
     if min_salary is None:
         min_salary = 0
@@ -104,14 +111,12 @@ def normalize_salary(min_salary, max_salary, contract_time):
         max_salary *= 2080
     return min_salary, max_salary
 
-# Format ISO date
 def format_date(date_str):
     try:
         return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
     except:
         return None
 
-# Fetch jobs from Adzuna API
 def fetch_jobs(title, location, page=1):
     url = f"https://api.adzuna.com/v1/api/jobs/us/search/{page}"
     params = {
@@ -121,7 +126,7 @@ def fetch_jobs(title, location, page=1):
         "what": title,
         "where": location,
         "sort_by": "date",
-        "max_days_old": 30,  # Updated to 30 days
+        "max_days_old": 30,
         "content-type": "application/json"
     }
     response = requests.get(url, params=params)
@@ -131,31 +136,28 @@ def fetch_jobs(title, location, page=1):
         print(f"⚠️ Error {response.status_code} for {title} in {location}")
         return None
 
-# Save scraper progress
 def save_progress(index):
-    with open('progress.txt', 'w') as f:
+    with open(PROGRESS_PATH, 'w') as f:
         f.write(str(index))
 
-# Load scraper progress
 def load_progress():
-    if os.path.exists('progress.txt'):
-        with open('progress.txt', 'r') as f:
+    if os.path.exists(PROGRESS_PATH):
+        with open(PROGRESS_PATH, 'r') as f:
             return int(f.read())
     return 0
 
-# Main scraping function
 def run_scraper():
     calls_made = 0
     start_idx = load_progress()
 
-    with open('master_query_list.csv', newline='', encoding='utf-8') as csvfile:
+    with open(os.path.join(SCRIPT_DIR, 'master_query_list.csv'), newline='', encoding='utf-8') as csvfile:
         reader = list(csv.DictReader(csvfile))
 
         for idx, row in enumerate(reader):
             if idx < start_idx:
                 continue
 
-            if calls_made >= 25:  # Reduced limit for testing
+            if calls_made >= 25:
                 print("✅ Reached safe test limit of 25 API calls. Stopping.")
                 return
 
@@ -175,7 +177,8 @@ def run_scraper():
                     if data_us and data_us.get('results'):
                         results += data_us['results']
 
-                save_jobs(results)
+                count = save_jobs(results)
+                print(f"✅ Inserted {count} jobs for {title} in {location}")
 
             save_progress(idx + 1)
             time.sleep(random.uniform(2.5, 3.5))
