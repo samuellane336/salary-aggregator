@@ -170,6 +170,11 @@ def run_scraper():
 
             if data and data.get('results'):
                 results = data['results']
+		for job in results[:3]:
+    		     print(json.dumps(job, indent=2))
+   		     print("=" * 80)
+		exit()
+
                 if len(results) < 10:
                     print(f"🌎 Few results for {title} in {location}. Broadening search.")
                     data_us = fetch_jobs(title, "")
