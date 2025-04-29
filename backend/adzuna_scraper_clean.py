@@ -5,9 +5,9 @@ import requests
 import psycopg2
 import time
 import random
+import json
 from datetime import datetime
 
-# Always write progress.txt next to the script
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROGRESS_PATH = os.path.join(SCRIPT_DIR, 'progress.txt')
 
@@ -17,15 +17,14 @@ def validate_master_query_list():
             reader = csv.DictReader(csvfile)
             first_row = next(reader)
             if 'job_title' not in first_row or 'city' not in first_row:
-                print("❌ Error: master_query_list.csv must have 'job_title' and 'city' headers.")
+                print("Error: master_query_list.csv must have 'job_title' and 'city' headers.")
                 exit(1)
             else:
-                print("✅ master_query_list.csv validated successfully.")
+                print("master_query_list.csv validated successfully.")
     except Exception as e:
-        print(f"❌ Error reading master_query_list.csv: {e}")
+        print(f"Error reading master_query_list.csv: {e}")
         exit(1)
 
-# Load environment variables
 DB_HOST = os.environ.get('DB_HOST')
 DB_NAME = os.environ.get('DB_NAME')
 DB_USER = os.environ.get('DB_USER')
@@ -57,6 +56,9 @@ def save_jobs(jobs):
                 job.get('contract_time')
             )
 
+            if salary_min == 0 and salary_max == 0:
+                continue
+
             cur.execute("""
                 INSERT INTO JobPosting 
                 (adzuna_id, title, company_name, location, category, salary_min, salary_max, 
@@ -72,7 +74,7 @@ def save_jobs(jobs):
                 salary_min,
                 salary_max,
                 job.get('contract_type'),
-                job.get('contract_time'),  # salary_interval
+                job.get('contract_time'),
                 job.get('description'),
                 format_date(job.get('created')),
                 job.get('redirect_url'),
@@ -127,13 +129,14 @@ def fetch_jobs(title, location, page=1):
         "where": location,
         "sort_by": "date",
         "max_days_old": 30,
+        "expand": 1,
         "content-type": "application/json"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
         return response.json()
     else:
-        print(f"⚠️ Error {response.status_code} for {title} in {location}")
+        print(f"Error {response.status_code} for {title} in {location}")
         return None
 
 def save_progress(index):
@@ -158,32 +161,33 @@ def run_scraper():
                 continue
 
             if calls_made >= 25:
-                print("✅ Reached safe test limit of 25 API calls. Stopping.")
+                print("Reached safe test limit of 25 API calls. Stopping.")
                 return
 
             title = row['job_title']
             location = row['city']
 
-            print(f"🔎 Scraping: {title} in {location}")
+            print(f"Scraping: {title} in {location}")
             data = fetch_jobs(title, location)
             calls_made += 1
 
             if data and data.get('results'):
                 results = data['results']
-		for job in results[:3]:
-    		    print(json.dumps(job, indent=2))
-   		    print("=" * 80)
-		exit()
+                for job in results[:3]:
+                    print(json.dumps(job, indent=2))
+                    print("=" * 80)
+                save_progress(idx + 1)
+                exit()
 
                 if len(results) < 10:
-                    print(f"🌎 Few results for {title} in {location}. Broadening search.")
+                    print(f"Few results for {title} in {location}. Broadening search.")
                     data_us = fetch_jobs(title, "")
                     calls_made += 1
                     if data_us and data_us.get('results'):
                         results += data_us['results']
 
                 count = save_jobs(results)
-                print(f"✅ Inserted {count} jobs for {title} in {location}")
+                print(f"Inserted {count} jobs for {title} in {location}")
 
             save_progress(idx + 1)
             time.sleep(random.uniform(2.5, 3.5))
