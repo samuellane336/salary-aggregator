@@ -130,7 +130,6 @@ def fetch_jobs(title, location, page=1):
         "sort_by": "date",
         "max_days_old": 30,
         "expand": 1,
-        "content-type": "application/json"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
