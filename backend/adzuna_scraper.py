@@ -83,7 +83,7 @@ def save_jobs(jobs):
                 inserted_count += 1
 
         except Exception as e:
-            print(f⚠️ Error inserting job: {e}")
+            print(f"Error inserting job: {e}")
             continue
 
     conn.commit()
