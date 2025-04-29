@@ -83,7 +83,7 @@ def save_jobs(jobs):
                 inserted_count += 1
 
         except Exception as e:
-            print(f"⚠️ Error inserting job: {e}")
+            print(f⚠️ Error inserting job: {e}")
             continue
 
     conn.commit()
@@ -171,8 +171,8 @@ def run_scraper():
             if data and data.get('results'):
                 results = data['results']
 		for job in results[:3]:
-    		     print(json.dumps(job, indent=2))
-   		     print("=" * 80)
+    		    print(json.dumps(job, indent=2))
+   		    print("=" * 80)
 		exit()
 
                 if len(results) < 10:
