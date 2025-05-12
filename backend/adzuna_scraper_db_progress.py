@@ -136,8 +136,8 @@ def run_scraper():
         for idx, row in enumerate(reader):
             if idx < start_idx:
                 continue
-            if calls_made >= 25:
-                print("Reached 25 API calls. Stopping.")
+            if calls_made >= 250:
+                print("Reached 250 API calls. Stopping.")
                 return
             title = row['job_title']
             location = row['city']
