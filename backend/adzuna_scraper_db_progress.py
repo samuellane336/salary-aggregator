@@ -140,7 +140,7 @@ def run_scraper():
                 print("Reached 250 API calls. Stopping.")
                 return
             title = row['job_title']
-            location = row['city']
+            location = row['location']
             print(f"Scraping: {title} in {location}")
             data = fetch_jobs(title, location)
             calls_made += 1
