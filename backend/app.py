@@ -56,6 +56,45 @@ def get_median_salary():
     conn.close()
     return jsonify({"median_salary": median})
 
+@app.route("/autocomplete/job", methods=["GET"])
+def autocomplete_job():
+    query = request.args.get("query", "").strip().lower()
+    if not query:
+        return jsonify([])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DISTINCT title FROM JobPosting
+        WHERE LOWER(title) LIKE %s
+        ORDER BY title
+        LIMIT 10
+    """, (f"%{query}%",))
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([row[0] for row in results])
+
+
+@app.route("/autocomplete/location", methods=["GET"])
+def autocomplete_location():
+    query = request.args.get("query", "").strip().lower()
+    if not query:
+        return jsonify([])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DISTINCT location FROM JobPosting
+        WHERE LOWER(location) LIKE %s
+        ORDER BY location
+        LIMIT 10
+    """, (f"%{query}%",))
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify([row[0] for row in results])
+
 if __name__ == "__main__":
    import os
 
