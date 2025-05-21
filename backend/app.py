@@ -69,7 +69,7 @@ def autocomplete_job():
         WHERE LOWER(title) LIKE %s
         ORDER BY title
         LIMIT 10
-    """, (f"%{query}%",))
+    """, (f"{query}%",))
     results = cur.fetchall()
     cur.close()
     conn.close()
@@ -89,7 +89,7 @@ def autocomplete_location():
         WHERE LOWER(location) LIKE %s
         ORDER BY location
         LIMIT 10
-    """, (f"%{query}%",))
+    """, (f"{query}%",))
     results = cur.fetchall()
     cur.close()
     conn.close()
